@@ -6,9 +6,27 @@ const app = express();
 app.use(cors()); // Cho phép Flutter gọi API
 app.use(express.json());
 
+// Hàm chuẩn hóa tên bài hát
+const normalizeSongName = (songName) => {
+    // Chuyển về chữ thường
+    let normalized = songName.toLowerCase();
+    // Danh sách các từ cần xóa
+    const unwantedWords = [
+        ',', '-', '|', '||', '/', 'mv', 'cover', 'official', 'remix', 'music', 'video', 'track', 'mix', 'sơn tùng mtp', 'ft.', 'ft.', 'feat.', 'feat', 'lyrics', 'lofi', 'chill', 'nhạc', 'nhạc hay', 'hay nhất', 'live', 'tiktik', 'xu hướng'
+    ];
+    // Xóa các từ không mong muốn
+    unwantedWords.forEach(word => {
+        normalized = normalized.replace(new RegExp(`\\b${word}\\b`, 'gi'), '');
+    });
+    // Loại bỏ khoảng trắng thừa
+    normalized = normalized.replace(/\s+/g, ' ').trim();
+    console.log(`Normalized song name: ${normalized}`); // In ra tên bài hát đã chuẩn hóa
+    return normalized;
+};
+
 app.get('/search/:songName', async (req, res) => {
     try {
-        const songName = req.params.songName;
+        const songName = normalizeSongName(req.params.songName); // Chuẩn hóa tên bài hát
         const searchResult = await searchByKeyword(songName);
         const songs = searchResult.search.song.song.filter(song => song.type === 'SONG');
         res.json({
@@ -43,9 +61,10 @@ app.get('/lyric/:songKey', async (req, res) => {
         res.status(500).json({ status: 'error', message: error.message });
     }
 });
+
 app.get('/searchlyric/:songName', async (req, res) => {
     try {
-        const songName = req.params.songName;
+        const songName = normalizeSongName(req.params.songName); // Chuẩn hóa tên bài hát
 
         // Tìm kiếm bài hát
         const searchResult = await searchByKeyword(songName);
@@ -78,6 +97,7 @@ app.get('/searchlyric/:songName', async (req, res) => {
         res.status(500).json({ status: 'error', message: error.message });
     }
 });
+
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
